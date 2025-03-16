@@ -3,3 +3,7 @@
 /result_data/
 /oldFile
 data.zip
+*.log
+*.pt
+*.pyc
+data/

@@ -309,7 +309,7 @@ def smooth_data(data, window_size):
         smoothed[i - 1] = sum(data[:i]) / i
 
     return smoothed
-def normlize_data(input:list[list]):
+def normlize_data(input):
     return [[ele[i]/(ele[0]+1e-10) for i in range(len(ele))] for ele in input]
 
 def getxyFromStateModel(model:Problem, grad = False):

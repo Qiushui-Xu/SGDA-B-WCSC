@@ -258,7 +258,7 @@ class ProblemDRO(Problem):
             cache = {'gisette': 0.053220038704550165, 'sido0': 0.5220159537252982}  # 3127.4873
             return cache[data_name]
 
-        full_batch = torch.arange(data.shape[0]).to(self.device)
+        # full_batch = torch.arange(data.shape[0]).to(self.device)
         if b == None:
             b = data.shape[0]
             x = self.forward(data).flatten()
@@ -269,7 +269,7 @@ class ProblemDRO(Problem):
             x = self.forward(data).flatten()
 
         h = 1/b*torch.log(1 + torch.exp(torch.clamp(-target * x, max=100)))
-        foo = -target * torch.exp(-target * h) / (1 + torch.exp(-target * h))
+        # foo = -target * torch.exp(-target * h) / (1 + torch.exp(-target * h))
         length = 0
         for i in range(0,len(self.fc),2):
             length += self.fc[i].weight.data.flatten().shape[0] + self.fc[i].bias.data.flatten().shape[0]

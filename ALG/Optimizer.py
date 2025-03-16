@@ -130,11 +130,11 @@ class ALG():
 
             StartModelSet[i] = [start_model, y_opt, model_copy, model_bk]
             
-        torch.save(StartModelSet, 'initial.pt')
+        torch.save(StartModelSet, f'{self.model_type}_initial.pt')
 
 
     def load_initial_model(self, sim_time):
-        start = torch.load('initial.pt')
+        start = torch.load(f'{self.model_type}_initial.pt')
         self.start_model,self.y_opt,self.model_copy,self.model_bk = start[sim_time]
 
     def reset_all(self,T=1):
@@ -298,7 +298,7 @@ class ALG():
             sim_find = True # whether finding lr_x,lr_y in this simluation
             self.load_initial_model(sim)
             self.start_model.dual_y.data = self.y_opt.clone()
-
+            no_try = -1
             while not find:
                 #shrink the stepsize conditions and change configs accordingly
                 find = True
@@ -306,7 +306,12 @@ class ALG():
                 lr_y = 1/L
                 rho = ((1+12/N)**(1/2)-1)/24
                 lr_x = N*rho*self.mu_y**2*lr_y**3
-
+                
+                no_try += 1
+                
+                if no_try > 0:
+                    print(f"############### Contraction {no_try} ###############")
+                    
                 for t in range(T):
                     s = sim*T+t
                     max_iter= max_iters[t]
@@ -316,7 +321,7 @@ class ALG():
                     self.record['contraction_times'][s] += 1
                     self.model_curr = Model(data_size=self.data_size,mu_y=self.mu_y, kappa=self.kappa, device=self.device,injected_noise_x=self.std_x, injected_noise_y=self.std_y).to(self.device)
                     self.model_curr.load_state_dict(copy.deepcopy(self.start_model.state_dict()))
-
+                    self.model_curr = self.model_curr.to(self.device)
                     #initilize delta0
                     y0_opt = self.y_opt
                     delta0 = torch.norm(self.model_curr.dual_y-y0_opt)**2 # in fact, delta0 = 0, we set 1e-6 for tolerance

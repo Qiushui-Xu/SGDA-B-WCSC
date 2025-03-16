@@ -4,12 +4,20 @@ from ALG.Utils import *
 from ALG.dataclass import *
 torch.manual_seed(123)
 torch.set_default_dtype(torch.float64)
+import argparse
+
+# Add argument parsing for device index
+parser = argparse.ArgumentParser(description='Select GPU device.')
+parser.add_argument('--gpu', type=int, default=2, help='Index of the GPU to use')
+args = parser.parse_args()
 
 try:
-    device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    torch.cuda.get_device_name(0)
-except AssertionError:
+    device = f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu'
+    torch.cuda.get_device_name(args.gpu)
+except (AssertionError, RuntimeError):
     device = 'cpu'
+
+print(f"Using device: {device}")
 
 # Load the data
 # gisette: https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/binary/gisette_scale.bz2
@@ -37,7 +45,7 @@ for stdx,stdy in[(1,1)]:
         model_type = 'Q'  # Q: projection_y=False,DRO,FairCNN: projection_y=True
         sim_time = 3
         max_iter = 40000
-        freq = 100  # print result by freq
+        freq = 5000  # print result by freq
         my_optimizer = ALG(train_set=train_set, data_name=data_name, mu_y=mu_y, kappa=kappa,
                            sim_time=sim_time, max_iter=max_iter,
                            freq=freq, is_show_result=True, is_save_data=False,
@@ -61,7 +69,8 @@ for stdx,stdy in[(1,1)]:
         my_optimizer.max_iter = max_iter
         gamma1 = 0.8
         gamma2 = 0.95
-        result = my_optimizer.line_search(N=1,T=10,gamma=gamma1,randompick=True)
+        # result = my_optimizer.line_search(N=1,T=10,gamma=gamma1,randompick=True)
+        result = my_optimizer.line_search(N=5,T=3,gamma=gamma1,randompick=True)
         result = my_optimizer.line_search(N=2,T=3,gamma=gamma1,randompick=True)
         result = my_optimizer.line_search(N=1,T=3,gamma=gamma1,randompick=True)
         # my_optimizer.max_iter = max(result['total_iter'][0], my_optimizer.max_iter)

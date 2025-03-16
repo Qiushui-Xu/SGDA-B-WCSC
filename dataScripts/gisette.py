@@ -5,7 +5,7 @@ from ALG.dataclass import Creatdata
 import bz2
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-torch.cuda.get_device_name(0)
+# torch.cuda.get_device_name(0)
 data = torch.tensor([[0 for _ in range(5000)] for _ in range(6000)], dtype=torch.float32)
 targets = torch.tensor([0 for _ in range(6000)], dtype=torch.int64)
 
