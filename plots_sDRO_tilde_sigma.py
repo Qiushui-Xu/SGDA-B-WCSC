@@ -9,7 +9,8 @@ DATA_LIMIT = 5000
 PLOT_LIMIT = 3000
 for mu_y in [0.01]:
     data_name = 'gisette' + '_muy_' + str(mu_y) + f'_kappa_{1}_b_{200}'
-    data_path = f'./result_data/{data_name}'
+    data_path = f'./result_data/tilde_sigma_new_{data_name}'
+    data_path_new = f'./result_data/tilde_sigma_new_{data_name}'
     for plot_part in ['x','y','z','loss','acc','lr_x','lr_y','primalF']:
         G = {}
         G['GS-GDA-B,N=2'] = data_path +'/primal_line_search_N_2_AGDA'
@@ -22,11 +23,11 @@ for mu_y in [0.01]:
         G['J-GDA'] = data_path +'/GDA'
         G['GS-GDA'] = data_path +'/AGDA'
         G['TiAda'] = data_path +'/TiAda'
-        G['VRLM'] = data_path +'/VRLM'
+        # G['VRLM'] = data_path +'/VRLM'
 
 
-        plt.figure(dpi=150)
-        plt.figure(figsize=(10, 5))
+        # plt.figure(dpi=50)
+        plt.figure(figsize=(10, 5),dpi=50)
         fig, ax = plt.subplots()
         is_log = False
         C = 0.0  # value center for log s
@@ -213,4 +214,6 @@ for mu_y in [0.01]:
             if data_name_tmp[i] == '.':
                 data_name_tmp[i] = '_'
 
-        plt.savefig(f'./figure/{"".join(data_name_tmp)}_{plot_part}.pdf', bbox_inches='tight', facecolor='w', dpi=150)
+        # plt.savefig(f'./figure/{"".join(data_name_tmp)}_{plot_part}.pdf', bbox_inches='tight', dpi=50)
+        plt.savefig(f'./figure/{"".join(data_name_tmp)}_{plot_part}.png', bbox_inches='tight', facecolor='w', dpi=200)
+        plt.close()

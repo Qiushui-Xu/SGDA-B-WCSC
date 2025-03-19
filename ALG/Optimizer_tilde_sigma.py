@@ -15,6 +15,7 @@ from ALG.Utils import projection_simplex_sort as pjy_y2
 #from ALG.Utils import projection_l2 as pj_y
 from ALG.Utils import projection_l2 as pj_x
 from ALG.Utils import getxyFromStateModel, computeGrad
+from ALG.Models import ProblemDRO
 from  collections import  defaultdict
 
 def call_model(model_type):
@@ -51,50 +52,52 @@ def estimate_L_mu(Q_model):
     # estimated_mu = eig_Q.min()
     return estimated_L, estimated_mu
 
-def estimate_tilde_sigma(model, data_by_batch,target_by_batch, batch_index, b, isOnestepmethod = False):
-    grads = []
+def estimate_tilde_sigma(model: ProblemDRO, data_by_batch,target_by_batch, batch_index, b, isOnestepmethod = False):
+    
+    
     if model.name[0] == 'Q':
-        for _ in range(20):
-            model.zero_grad()
-            # epsx = [2*(torch.rand_like(model.x)-0.5)*model.std_x for _ in range(b)]
-            # epsy = [2*(torch.rand_like(model.dual_y)-0.5)*model.std_y for _ in range(b)]
-            # epsx = sum(epsx)/b
-            # epsy = sum(epsy)/b
-            epsx = 2*(torch.rand_like(model.x)-0.5)*model.std_x
-            epsy = 2*(torch.rand_like(model.dual_y)-0.5)*model.std_y
-            if isOnestepmethod:
-                loss = model.loss(data_by_batch, batch_index, target_by_batch) + 2*(torch.rand(1,device=model.device)-0.5)*model.std_x
-            else:
-                loss = model.loss(data_by_batch, batch_index, target_by_batch) #+ 2*(torch.rand(1,device=model.device)-0.5)*model.std_x
-            loss2 = loss + model.x.T @ epsx + model.dual_y.T @ epsy
-            loss2.backward()
-            grads.append(model.dual_y.grad.clone())
+        tilde_sigma = 0
+        grad_sigmas = []
+        for _ in range(100):
+            grads = []
+            rand_x = 100+10*2*(torch.rand_like(model.x,requires_grad=True)-0.5)
+            rand_y = 100+10*2*(torch.rand_like(model.dual_y,requires_grad=True)-0.5)
+            loss = rand_x.T @ model.A @ rand_y + 1 / 2 * rand_x.T @ model.Q @ rand_x - model.mu_y / 2 * torch.norm(rand_y)**2
+            for _ in range(20):
+                model.zero_grad()
+                # epsx = [2*(torch.rand_like(model.x)-0.5)*model.std_x for _ in range(b)]
+                # epsy = [2*(torch.rand_like(model.dual_y)-0.5)*model.std_y for _ in range(b)]
+                # epsx = sum(epsx)/b
+                # epsy = sum(epsy)/b
+                epsx = 2*(torch.rand_like(model.x)-0.5)*model.std_x
+                epsy = 2*(torch.rand_like(model.dual_y)-0.5)*model.std_y
+                if isOnestepmethod:
+                    loss = loss + 2*(torch.rand(1,device=model.device)-0.5)*model.std_x
+                else:
+                    loss = loss
+                loss2 = loss + rand_x.T @ epsx + rand_y.T @ epsy
+                grad_y = torch.autograd.grad(loss2, rand_y, create_graph=True)[0]
+                grads.append(grad_y.clone())
 
-            # grad = torch.autograd.grad(loss2, model.dual_y, create_graph=False)[0]
-            # grads.append(grad)
-        grads = torch.stack(grads)
-        sigmas = torch.std(grads, dim=0)
-        tilde_sigma = sigmas.max().item()
+            grads = torch.stack(grads)
+            grad_sigmas = torch.std(grads, dim=0)
+        tilde_sigma = max(grad_sigmas.max().item(), tilde_sigma)
         # sigmas = grad_var.max()
+        sigma_x = tilde_sigma
+        sigma_y = tilde_sigma
 
     else:
-        model.zero_grad()
-        loss = model.loss(data_by_batch, batch_index, target_by_batch)
-        loss.backward()
-        grad = model.dual_y.grad
-        sigmas.append(grad.detach().cpu().numpy().var())
-        tilde_sigma = np.max(sigmas)
-    
-    return tilde_sigma
+        sigma_x, sigma_y =  model.estimate_var(data_by_batch, target_by_batch, b, sim_times = 100)
+    return sigma_x, sigma_y
 
-def estimate_sigma(model, data_by_batch,target_by_batch, batch_index, b, isOnestepmethod = False):
+def estimate_sigma(model: ProblemDRO, data_by_batch,target_by_batch, batch_index, b, isOnestepmethod = False):
     model.zero_grad()
     if model.name[0] == 'Q':
         grads = []
         for _ in range(20):
             model.zero_grad()
-            epsx = [2*(torch.rand_like(model.x)-0.5)*model.std_x for _ in range(b)]
-            epsy = [2*(torch.rand_like(model.dual_y)-0.5)*model.std_y for _ in range(b)]
+            epsx = [2*(torch.rand_like(model.x,requires_grad=True)-0.5)*model.std_x for _ in range(b)]
+            epsy = [2*(torch.rand_like(model.dual_y,requires_grad=True)-0.5)*model.std_y for _ in range(b)]
             epsx = sum(epsx)/b
             epsy = sum(epsy)/b
             if isOnestepmethod:
@@ -107,12 +110,12 @@ def estimate_sigma(model, data_by_batch,target_by_batch, batch_index, b, isOnest
         grads = torch.stack(grads)
         grad_var = torch.var(grads, dim=0)
         sigma = grad_var.max()
+        sigma_x = sigma
+        sigma_y = sigma
     else:
-        loss = model.loss(data_by_batch, batch_index, target_by_batch)
-        loss.backward()
-        grad = model.dual_y.grad
-        sigma = grad.detach().cpu().numpy().var()
-    return sigma
+        sigma_x, sigma_y =  model.estimate_var(data_by_batch, target_by_batch, b, sim_times = 100)
+        
+    return sigma_x, sigma_y
 
 class ALG():
     def __init__(self, train_set, data_name, mu_y, kappa = 10,
@@ -186,7 +189,7 @@ class ALG():
             self.estimated_L = geo_mean # max eigenvalue of Q
             self.estimated_mu = geo_mean # min eigenvalue of Q
         else:
-            self.estimated_L = self.mu_y
+            self.estimated_L = self.mu_y 
             self.estimated_mu = self.mu_y
         
     def reset_initial_model(self):
@@ -367,7 +370,7 @@ class ALG():
             
         return record_copy
 
-    def line_search(self, gamma:float=0.9, N:int=1, T=3, method:str=None, min_b:int=1, force_b:int=-1, kernal='AGDA', randompick=False):
+    def line_search(self, gamma:float=0.9, xi=0.5, alpha=0.5, N:int=1, T=3, method:str=None, min_b:int=1, force_b:int=-1, kernal='AGDA', randompick=False):
         self.reset_all(T=T)
 
         if not method:
@@ -381,18 +384,24 @@ class ALG():
         if force_b>=1:
             b = force_b
             self.b = b
+        # elif self.model_type == 'DRO':
         else:
             #b = 64/eps**2*(self.start_model.std_x**2+(1+6*(2-lr_y*self.mu_y)/lr_y/self.mu_y/(1-lr_y*self.mu_y)*self.start_model.std_y**2)) 
             #b = int(max(b,min_b))
-            b = min(self.b,len(self.targets))
+            # b = min(self.b,len(self.targets))
+            b = int(np.ceil(32 * (np.log(4/alpha))**2 /(xi**2)))
         max_iters = [random.randint(1, self.max_iter) for _ in range(T)]
 
         for sim in range(self.sim_time): 
             #initilize the line search parameters
             find = False # whether find finite squence until max iteration
             # L = self.mu_y
-            L = self.estimated_L * gamma
-            mu = self.estimated_mu / gamma
+            if self.model_type == 'Q':
+                L = self.estimated_L * gamma
+                mu = self.estimated_mu / gamma
+            else:
+                L = self.estimated_L 
+                mu = self.estimated_mu 
             sim_find = True # whether finding lr_x,lr_y in this simluation
             self.load_initial_model(sim)
             self.start_model.dual_y.data = self.y_opt.clone()
@@ -400,11 +409,16 @@ class ALG():
             print(f'Initial L: {L}, mu: {mu}, gamma: {gamma}')
             
             data_by_batch, target_by_batch, batch_index = self.prepare_batch(self.start_model, b)
-            tilde_sigma = estimate_tilde_sigma(self.start_model, data_by_batch, target_by_batch, batch_index, b)
+            tilde_sigma_x, tilde_sigma_y = estimate_tilde_sigma(self.start_model, data_by_batch, target_by_batch, batch_index, b)
             
-            sigma_x = tilde_sigma * gamma
-            sigma_y = sigma_x # 1
-            print(f'Initial tilde_sigma: {tilde_sigma}, sigma_x: {sigma_x}, sigma_y: {sigma_y}, ')
+            if self.model_type == 'Q':
+                sigma_x = tilde_sigma_x * gamma
+                sigma_y = sigma_x # 1
+            else:
+                sigma_x, sigma_y = estimate_sigma(self.start_model, data_by_batch, target_by_batch, batch_index, b)
+                sigma_x = sigma_x * gamma
+                sigma_y = sigma_y * gamma
+            print(f'Initial tilde_sigma_x: {tilde_sigma_x}, tilde_sigma_y: {tilde_sigma_y}, sigma_x: {sigma_x/gamma}, sigma_y: {sigma_y/gamma}, ')
             retry = -1
             while not find:
                 retry += 1
@@ -413,8 +427,9 @@ class ALG():
                     
                 #shrink the stepsize conditions and change configs accordingly
                 find = True
-                L = L / gamma
-                mu = mu * gamma
+                L = L / gamma  # for the first iteration, L = estimated_L = geo_mean (Q problem), L = estimated_L/gamma = mu_y/gamma(DRO)
+                if self.model_type == 'Q':
+                    mu = mu * gamma  # for the first iteration, mu = estimated_mu = geo_mean (Q problem), mu = estimated_mu = mu_y (DRO)
                 
                 sigma_x = sigma_x / gamma
                 sigma_y = sigma_y / gamma
@@ -635,19 +650,20 @@ class ALG():
                     if lcondition>rcondition:
                         find = False
                         foo = self.record['contraction_times'][s]
-                        print(f'Contraction {foo} fails, gap={lcondition-rcondition}, lcondition={lcondition}, rcondition={rcondition}, Phi0={Phi0}, Phik={Phik}\n')  
+                        print(f'Contraction {foo} fails, current_iter={self.record["iter"][s]}, gap={lcondition-rcondition}, lcondition={lcondition}, rcondition={rcondition}, Phi0={Phi0}, Phik={Phik}\n')  
                     else:
                         data_by_batch, target_by_batch, batch_index = self.prepare_batch(self.start_model, b)
-                        sigma = estimate_sigma(self.model_curr, data_by_batch, target_by_batch, batch_index, b)
-                        print(f'sigma: {sigma}, tilde_sigma: {tilde_sigma}')
-                        if tilde_sigma > sigma:
+                        sigma_x, sigma_y = estimate_sigma(self.model_curr, data_by_batch, target_by_batch, batch_index, b)
+                        print(f'sigma_x: {sigma_x}, sigma_y: {sigma_y}, tilde_sigma_x: {tilde_sigma_x}, tilde_sigma_y: {tilde_sigma_y}')
+                        if tilde_sigma_x >= sigma_x and tilde_sigma_y >= sigma_y:
                             find = True
                             foo = self.record['contraction_times'][s]
-                            print(f'Contraction {foo} successes!!! Gap={lcondition-rcondition}, lcondition={lcondition}, rcondition={rcondition}, Phi0={Phi0}, Phik={Phik}\n')       
+                            print(f'Contraction {foo} successes, current_iter={self.record["iter"][s]}!!! Gap={lcondition-rcondition}, lcondition={lcondition}, rcondition={rcondition}, Phi0={Phi0}, Phik={Phik}\n')       
                         else:
-                            tilde_sigma = tilde_sigma / gamma
+                            tilde_sigma_x = tilde_sigma_x / gamma
+                            tilde_sigma_y = tilde_sigma_y / gamma
                             foo = self.record['contraction_times'][s]
-                            print(f'Contraction {foo} fails, new tilde_sigma: {tilde_sigma}, gap={lcondition-rcondition}, lcondition={lcondition}, rcondition={rcondition}, Phi0={Phi0}, Phik={Phik}\n')
+                            print(f'Contraction {foo} fails, current_iter={self.record["iter"][s]}, new tilde_sigma_x: {tilde_sigma_x}, tilde_sigma_y: {tilde_sigma_y}, gap={lcondition-rcondition}, lcondition={lcondition}, rcondition={rcondition}, Phi0={Phi0}, Phik={Phik}\n')
             if not sim_find:
                 print(f'{s}th sim failed ({restart_simu_time} trys), restarting...')
                 continue
@@ -670,7 +686,7 @@ class ALG():
                 foo = self.data_name
                 save_kappa = 1
             import os
-            folder_path = './result_data/tilde_sigma' + foo + '_muy_' + str(self.mu_y) + '_kappa_' + str(save_kappa) + '_b_' + str(self.b)
+            folder_path = './result_data/tilde_sigma_new_' + foo + '_muy_' + str(self.mu_y) + '_kappa_' + str(save_kappa) + '_b_' + str(self.b)
             if not os.path.exists(folder_path):
                 os.makedirs(folder_path)
             file_name =  folder_path + '/' + method 
@@ -703,7 +719,7 @@ class ALG():
         batch_start = 0
         time_counter = 1
 
-        if torch.norm(model_tmp.dual_y.data.clone() )**2 >1e100 or torch.isnan(torch.norm(model_tmp.dual_y.data.clone() )**2):
+        if torch.norm(model_tmp.dual_y.data.clone())**2 > 1e100 or torch.isnan(torch.norm(model_tmp.dual_y.data.clone() )**2):
             print('maximizer intial point not valid!!! Please debug from maximizer_solver!!!')
         
         iter = 0

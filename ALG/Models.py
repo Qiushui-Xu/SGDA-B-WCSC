@@ -201,7 +201,7 @@ class ProblemDRO(Problem):
         #     nn.ELU(),
         #     nn.Linear(8, 1),
         # )
-        self.dual_y = nn.Parameter(1 / self.d_y * torch.torch.ones(self.d_y, ), requires_grad=True)
+        self.dual_y = nn.Parameter(1 / self.d_y * torch.ones(self.d_y, dtype=torch.float64), requires_grad=True)
         self.weight_init()
 
         self.std_x = 0.000

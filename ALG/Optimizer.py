@@ -514,6 +514,8 @@ class ALG():
                                                                             +(1+6*(2-lr_y*self.mu_y)/lr_y/self.mu_y/(1-lr_y*self.mu_y)*self.model_curr.std**2)
                                                                             )
                     rcondition = rcondition/self.max_iter
+                    
+                    print(f"Current std_x:{self.model_curr.std}, std_y:{self.model_curr.std_y}")
 
 
                     if lcondition>rcondition:

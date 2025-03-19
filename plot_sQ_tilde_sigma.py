@@ -22,7 +22,7 @@ for kappa in [5,10,50]:
     b=10
     data_name = f'Q_stdx_{stdx}_stdy_{stdy}' + '_muy_' + str(mu_y) + '_kappa_' + str(kappa) + f'_b_{b}'
     data_path = f'./result_data/{data_name}'
-    newdata_path = f'./result_data/tilde_sigma{data_name}'
+    newdata_path = f'./result_data/tilde_sigma{data_name}.old'
 
     for plot_part in ['z','loss']:# ['x','y','z','loss','acc','lr_x','lr_y']:
         G = {}
@@ -236,4 +236,6 @@ for kappa in [5,10,50]:
         # # 调整布局以避免裁剪图例
         # plt.tight_layout()
 
-        plt.savefig(f'./figure/tilde_sigma{"".join(data_name_tmp)}_{plot_part}.pdf', bbox_inches='tight', facecolor='w', dpi=150)
+        # plt.savefig(f'./figure/tilde_sigma{"".join(data_name_tmp)}_{plot_part}.pdf', bbox_inches='tight', facecolor='w', dpi=150)
+        plt.savefig(f'./figure/tilde_sigma{"".join(data_name_tmp)}_{plot_part}.png', bbox_inches='tight', facecolor='w', dpi=100)
+        plt.close()

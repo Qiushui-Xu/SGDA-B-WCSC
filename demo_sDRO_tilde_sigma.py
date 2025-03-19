@@ -2,7 +2,10 @@ from ALG.Optimizer_tilde_sigma import *
 from ALG.Models import *
 from ALG.Utils import *
 from ALG.dataclass import *
+torch.manual_seed(123)
+torch.set_default_dtype(torch.float64)
 import argparse
+
 
 # Add argument parsing for device index
 parser = argparse.ArgumentParser(description='Select GPU device.')
@@ -10,8 +13,8 @@ parser.add_argument('--gpu', type=int, default=0, help='Index of the GPU to use'
 args = parser.parse_args()
 
 try:
-    device = f'cuda:{args.device_index}' if torch.cuda.is_available() else 'cpu'
-    torch.cuda.get_device_name(args.device_index)
+    device = f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu'
+    torch.cuda.get_device_name(args.gpu)
 except (AssertionError, RuntimeError):
     device = 'cpu'
 
@@ -66,19 +69,19 @@ for b in [200]:
         my_optimizer.max_iter = max_iter
         gamma1 = 0.9
         gamma2 = 0.95
-        result = my_optimizer.line_search(N=5,T=3)
-        result = my_optimizer.line_search(N=2,T=3)
-        result = my_optimizer.line_search(N=1,T=3)
-        my_optimizer.max_iter = max(result['total_iter'][0], my_optimizer.max_iter)
-        # #
-        sgd_b = b
-        beta = 0.9
-        lr_x_vrlm = min(kappa/40/L/(24*kappa**2+8*kappa+5), np.sqrt(beta)/48/(L+1)/(24*kappa**2+7*kappa+4))*100000
-        lr_y_vrlm = np.sqrt(beta)/4/np.sqrt(2)/L
-        # result = my_optimizer.optimizer(lr_x=1, lr_y=1, method='TiAda', b=sgd_b)
-        result = my_optimizer.optimizer(lr_x=lr_x_vrlm,lr_y=lr_y_vrlm, b0_vrlm= 6000,beta_vrlm=beta, method='VRLM',b=sgd_b)
-        result = my_optimizer.optimizer(lr_x=1/16/(kappa+1)**2/L,lr_y=1/L,method='GDA',b=sgd_b)
-        result = my_optimizer.optimizer(lr_x=1/6/L/(1+kappa)**2,lr_y=1/L,method='AGDA',b=sgd_b)  
-        result = my_optimizer.optimizer(lr_x=1/6/L, lr_y=1/144/L,p=2*L,beta=mu_y/144/L/1600, method='Smooth-AGDA', b=sgd_b)
+        result = my_optimizer.line_search(N=5,T=3,xi=0.8,alpha=0.5)
+        result = my_optimizer.line_search(N=2,T=3,xi=0.8,alpha=0.5)
+        result = my_optimizer.line_search(N=1,T=3,xi=0.8,alpha=0.5)
+        # my_optimizer.max_iter = max(result['total_iter'][0], my_optimizer.max_iter)
+        # # #
+        # sgd_b = b
+        # beta = 0.9
+        # lr_x_vrlm = min(kappa/40/L/(24*kappa**2+8*kappa+5), np.sqrt(beta)/48/(L+1)/(24*kappa**2+7*kappa+4))*100000
+        # lr_y_vrlm = np.sqrt(beta)/4/np.sqrt(2)/L
+        # # result = my_optimizer.optimizer(lr_x=1, lr_y=1, method='TiAda', b=sgd_b)
+        # result = my_optimizer.optimizer(lr_x=lr_x_vrlm,lr_y=lr_y_vrlm, b0_vrlm= 6000,beta_vrlm=beta, method='VRLM',b=sgd_b)
+        # result = my_optimizer.optimizer(lr_x=1/16/(kappa+1)**2/L,lr_y=1/L,method='GDA',b=sgd_b)
+        # result = my_optimizer.optimizer(lr_x=1/6/L/(1+kappa)**2,lr_y=1/L,method='AGDA',b=sgd_b)  
+        # result = my_optimizer.optimizer(lr_x=1/6/L, lr_y=1/144/L,p=2*L,beta=mu_y/144/L/1600, method='Smooth-AGDA', b=sgd_b)
 
 
