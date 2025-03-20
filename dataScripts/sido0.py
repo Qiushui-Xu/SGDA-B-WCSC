@@ -6,7 +6,7 @@ from ALG.dataclass import Creatdata
 import scipy.io
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-torch.cuda.get_device_name(0)
+# torch.cuda.get_device_name(0)
 data = scipy.io.loadmat('./data/sido0/sido0_train.mat') 
 data = getSparse(data['X'])
 targets =  pd.read_csv('./data/sido0/sido0_train.targets', header=None)

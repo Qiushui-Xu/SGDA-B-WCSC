@@ -31,24 +31,36 @@ def call_model(model_type):
 
 def estimate_L_mu(Q_model):
     # print(Q_model.Q)
-    eig_Q = torch.linalg.eigvalsh(Q_model.Q)
-    # eig_Q = torch.real(torch.linalg.eigvals(Q_model.Q))
-    estimated_L = eig_Q.max()
+    # eig_Q = torch.linalg.eigvalsh(Q_model.Q)
+    # # eig_Q = torch.real(torch.linalg.eigvals(Q_model.Q))
+    # estimated_L = eig_Q.max()
     mu_list = []
+    L_list = []
     for _ in range(100):
-        x = torch.randn(Q_model.d_x,1,device=Q_model.device,requires_grad=True)
+        x1 = torch.randn(Q_model.d_x,1,device=Q_model.device,requires_grad=True)
+        x2 = torch.randn(Q_model.d_x,1,device=Q_model.device,requires_grad=True)
         y1 = torch.randn(Q_model.d_y,1,device=Q_model.device,requires_grad=True)
         y2 = torch.randn(Q_model.d_y,1,device=Q_model.device,requires_grad=True)
         
-        loss1 = x.T @ Q_model.A @ y1 + 1 / 2 * x.T @ Q_model.Q @ x - Q_model.mu_y / 2 * torch.norm(y1)**2
-        loss2 = x.T @ Q_model.A @ y2 + 1 / 2 * x.T @ Q_model.Q @ x - Q_model.mu_y / 2 * torch.norm(y2)**2
-        grad_y1 = torch.autograd.grad(loss1, y1, create_graph=True)[0]
-        grad_y2 = torch.autograd.grad(loss2, y2, create_graph=True)[0]
-        numerator = torch.norm(grad_y1 - grad_y2)
+        loss11 = x1.T @ Q_model.A @ y1 + 1 / 2 * x1.T @ Q_model.Q @ x1 - Q_model.mu_y / 2 * torch.norm(y1)**2
+        loss12 = x1.T @ Q_model.A @ y2 + 1 / 2 * x1.T @ Q_model.Q @ x1 - Q_model.mu_y / 2 * torch.norm(y2)**2
+        grad_y1 = torch.autograd.grad(loss11, y1, create_graph=True)[0]
+        grad_y2 = torch.autograd.grad(loss12, y2, create_graph=True)[0]
+        numerator = (grad_y1 - grad_y2).T @ (y1 - y2)
         denominator = torch.norm(y1 - y2)
         mu_list.append(numerator / denominator)
         
+        loss1 = x1.T @ Q_model.A @ y1 + 1 / 2 * x1.T @ Q_model.Q @ x1 - Q_model.mu_y / 2 * torch.norm(y1)**2
+        loss2 = x2.T @ Q_model.A @ y2 + 1 / 2 * x2.T @ Q_model.Q @ x2 - Q_model.mu_y / 2 * torch.norm(y2)**2
+        grad_x1, grad_y1 = torch.autograd.grad(loss1, (x1, y1), create_graph=True)
+        grad_x2, grad_y2 = torch.autograd.grad(loss2, (x2, y2), create_graph=True)
+        numerator = torch.abs((grad_x1 - grad_x2).T @ (x1 - x2) + (grad_y1 - grad_y2).T @ (y1 - y2))
+        z1 = torch.cat([x1, y1])
+        z2 = torch.cat([x2, y2])
+        denominator = torch.norm(z1 - z2)
+        L_list.append(numerator / denominator)
     estimated_mu = torch.tensor(mu_list).min()
+    estimated_L = torch.tensor(L_list).max()
     # estimated_mu = eig_Q.min()
     return estimated_L, estimated_mu
 
@@ -397,7 +409,7 @@ class ALG():
             find = False # whether find finite squence until max iteration
             # L = self.mu_y
             if self.model_type == 'Q':
-                L = self.estimated_L * gamma
+                L = self.estimated_L 
                 mu = self.estimated_mu / gamma
             else:
                 L = self.estimated_L 

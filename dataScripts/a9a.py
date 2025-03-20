@@ -5,7 +5,7 @@ import pickle
 from ALG.dataclass import Creatdata
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-torch.cuda.get_device_name(0)
+# torch.cuda.get_device_name(0)
 
 X = pd.read_csv('./data/a9a/a9a.txt', sep="\t", header=None)
 

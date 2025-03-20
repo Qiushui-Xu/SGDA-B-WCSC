@@ -4,7 +4,7 @@ from torchvision import datasets, transforms
 import numpy as np
 import ssl
 ssl._create_default_https_context = ssl._create_unverified_context
-torch.cuda.get_device_name(0)
+# torch.cuda.get_device_name(0)
 train_set = torchvision.datasets.CIFAR10('./data', train=True, download=True,
                              transform = transforms.Compose([
                              transforms.ToTensor(), transforms.Normalize([0.5], [0.5])])
