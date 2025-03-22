@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from ALG.Utils import *
 import numpy as np
+from datetime import datetime
 
 DATA_LIMIT = 5000
 PLOT_LIMIT = 3000
@@ -11,6 +12,7 @@ for mu_y in [0.01]:
     data_name = 'gisette' + '_muy_' + str(mu_y) + f'_kappa_{1}_b_{200}'
     data_path = f'./result_data/tilde_sigma_new_{data_name}'
     data_path_new = f'./result_data/tilde_sigma_new_{data_name}'
+
     for plot_part in ['x','y','z','loss','acc','lr_x','lr_y','primalF']:
         G = {}
         G['GS-GDA-B,N=2'] = data_path +'/primal_line_search_N_2_AGDA'
@@ -71,7 +73,8 @@ for mu_y in [0.01]:
                 acc = [acc[i][:data_xLimit] for i in valid_line_search]
                 loss = [record['loss'][i][:data_xLimit] for i in valid_line_search]
                 primal = [record['primalF'][i][:data_xLimit] for i in valid_line_search]
-                error = [[1 - ele[i] for i in range(len(acc[0]))] for ele in acc]
+                # error = [[1 - ele[i] for i in range(len(acc[0]))] for ele in acc]
+                error = [[1 - ele[i] for i in range(len(ele))] for ele in acc]
                 lr_x = record['lr_x']
                 lr_y = record['lr_y']
                 lr_x = [lr_x[i][:data_xLimit] for i in valid_line_search]
@@ -215,5 +218,6 @@ for mu_y in [0.01]:
                 data_name_tmp[i] = '_'
 
         # plt.savefig(f'./figure/{"".join(data_name_tmp)}_{plot_part}.pdf', bbox_inches='tight', dpi=50)
-        plt.savefig(f'./figure/{"".join(data_name_tmp)}_{plot_part}.png', bbox_inches='tight', facecolor='w', dpi=200)
+        current_date = datetime.now().strftime("%Y%m%d")
+        plt.savefig(f'./figure/{"".join(data_name_tmp)}_{plot_part}_{current_date}.png', bbox_inches='tight', facecolor='w', dpi=200)
         plt.close()

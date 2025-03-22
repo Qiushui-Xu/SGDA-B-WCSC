@@ -45,7 +45,7 @@ for b in [200]:
         model_type = 'DRO' # Q: projection_y=False,DRO,FairCNN: projection_y=True
         sim_time=5
         max_iter=3000
-        freq=10000 # print result by freq
+        freq=1000 # print result by freq
         my_optimizer = ALG(train_set=train_set,data_name=data_name,mu_y=mu_y,
                             sim_time=sim_time,max_iter=max_iter, b=b,
                             freq=freq,is_show_result=True,is_save_data=True,

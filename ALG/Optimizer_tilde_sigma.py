@@ -7,6 +7,8 @@ import copy
 import pickle
 import random
 import math
+import os
+from datetime import datetime
 from collections import OrderedDict
 from importlib import reload
 from ALG.Utils import projection_simplex_bisection as pj_y
@@ -46,8 +48,8 @@ def estimate_L_mu(Q_model):
         loss12 = x1.T @ Q_model.A @ y2 + 1 / 2 * x1.T @ Q_model.Q @ x1 - Q_model.mu_y / 2 * torch.norm(y2)**2
         grad_y1 = torch.autograd.grad(loss11, y1, create_graph=True)[0]
         grad_y2 = torch.autograd.grad(loss12, y2, create_graph=True)[0]
-        numerator = (grad_y1 - grad_y2).T @ (y1 - y2)
-        denominator = torch.norm(y1 - y2)
+        numerator = - (grad_y1 - grad_y2).T @ (y1 - y2)
+        denominator = torch.norm(y1 - y2) ** 2
         mu_list.append(numerator / denominator)
         
         loss1 = x1.T @ Q_model.A @ y1 + 1 / 2 * x1.T @ Q_model.Q @ x1 - Q_model.mu_y / 2 * torch.norm(y1)**2
@@ -57,7 +59,7 @@ def estimate_L_mu(Q_model):
         numerator = torch.abs((grad_x1 - grad_x2).T @ (x1 - x2) + (grad_y1 - grad_y2).T @ (y1 - y2))
         z1 = torch.cat([x1, y1])
         z2 = torch.cat([x2, y2])
-        denominator = torch.norm(z1 - z2)
+        denominator = torch.norm(z1 - z2) ** 2
         L_list.append(numerator / denominator)
     estimated_mu = torch.tensor(mu_list).min()
     estimated_L = torch.tensor(L_list).max()
@@ -164,6 +166,10 @@ class ALG():
         self.std_y = inject_noise_y
         self.y_sum_eps = 0
         
+        if model_type == 'Q':
+            self.min_iter = 100000
+        else:
+            self.min_iter = 3000
         
         self.model_type = model_type
         self.data_name = data_name
@@ -241,11 +247,11 @@ class ALG():
 
             StartModelSet[i] = [start_model, y_opt, model_copy, model_bk]
             
-        torch.save(StartModelSet, 'initial.pt')
+        torch.save(StartModelSet, f'{self.model_type}_initial.pt')
 
 
     def load_initial_model(self, sim_time):
-        start = torch.load('initial.pt')
+        start = torch.load(f'{self.model_type}_initial.pt')
         self.start_model,self.y_opt,self.model_copy,self.model_bk = start[sim_time]
 
     def reset_all(self,T=1):
@@ -454,7 +460,7 @@ class ALG():
                 for t in range(T):
                     s = sim*T+t
                     max_iter= max_iters[t]
-
+                    print(f't is {t} in {T}, max_iter: {max_iter}')
                     #load the start model
                     self.reset_contraction(s)
                     self.record['contraction_times'][s] += 1
@@ -621,12 +627,37 @@ class ALG():
                                 if name != 'dual_y':
                                     check_temp += torch.norm(param.data)**2
 
-                        if not find or np.isnan(f_new)  or \
-                            torch.isnan(torch.norm(self.model_curr.dual_y)) \
-                            or(self.projection_y and torch.abs(torch.sum(self.model_curr.dual_y.data)-1)>1e-2) or \
-                            check_temp>1e32:
+                        if not find:
                             find = False
+                            print(f'Break by not find at {self.record["iter"][s]}')
                             break
+                        
+                        if np.isnan(f_new):
+                            find = False
+                            print(f'Break by f_new nan at {self.record["iter"][s]}')
+                            break
+                        
+                        if torch.isnan(torch.norm(self.model_curr.dual_y)):
+                            find = False
+                            print(f'Break by dual_y nan at {self.record["iter"][s]}')
+                            break
+                        
+                        if self.projection_y and torch.abs(torch.sum(self.model_curr.dual_y.data)-1)>1e-2:
+                            find = False
+                            print(f'Break by dual_y not sum to 1 at {self.record["iter"][s]}')
+                            break
+                        
+                        if check_temp>1e32:
+                            find = False
+                            print(f'Break by check_temp > 1e32 at {self.record["iter"][s]}')
+                            break
+                        
+                        # if not find or np.isnan(f_new)  or \
+                        #     torch.isnan(torch.norm(self.model_curr.dual_y)) \
+                        #     or(self.projection_y and torch.abs(torch.sum(self.model_curr.dual_y.data)-1)>1e-2) or \
+                        #     check_temp>1e32:
+                        #     find = False
+                        #     break
 
                     # start line search after all iterations
                     # print('------------------------contraction times', self.record['contraction_times'][s], 'is finished------------------------')
@@ -697,8 +728,8 @@ class ALG():
             else:
                 foo = self.data_name
                 save_kappa = 1
-            import os
-            folder_path = './result_data/tilde_sigma_new_' + foo + '_muy_' + str(self.mu_y) + '_kappa_' + str(save_kappa) + '_b_' + str(self.b)
+            current_time = datetime.now().strftime("%Y%m%d")
+            folder_path = './result_data/tilde_sigma_new_' + foo + '_muy_' + str(self.mu_y) + '_kappa_' + str(save_kappa) + '_b_' + str(self.b) + '_' + current_time
             if not os.path.exists(folder_path):
                 os.makedirs(folder_path)
             file_name =  folder_path + '/' + method 

@@ -69,10 +69,10 @@ for b in [200]:
         my_optimizer.max_iter = max_iter
         gamma1 = 0.9
         gamma2 = 0.95
-        # result = my_optimizer.line_search(N=5,T=3)
-        # result = my_optimizer.line_search(N=2,T=3)
-        # result = my_optimizer.line_search(N=1,T=3)
-        # my_optimizer.max_iter = max(result['total_iter'][0], my_optimizer.max_iter)
+        result = my_optimizer.line_search(N=5,T=3)
+        result = my_optimizer.line_search(N=2,T=3)
+        result = my_optimizer.line_search(N=1,T=3)
+        my_optimizer.max_iter = max(result['total_iter'][0], my_optimizer.max_iter)
         # #
         sgd_b = b
         beta = 0.9

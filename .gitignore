@@ -7,3 +7,4 @@ data.zip
 *.pt
 *.pyc
 data/
+backup_result/

@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 from ALG.Utils import *
 import numpy as np
+from datetime import datetime
 
 # example of pickle
 # l = [1,2,3,4]
@@ -22,9 +23,9 @@ for kappa in [5,10,50]:
     b=10
     data_name = f'Q_stdx_{stdx}_stdy_{stdy}' + '_muy_' + str(mu_y) + '_kappa_' + str(kappa) + f'_b_{b}'
     data_path = f'./result_data/{data_name}'
-    newdata_path = f'./result_data/tilde_sigma{data_name}.old'
+    newdata_path = f'./result_data/tilde_sigma_new_{data_name}'
 
-    for plot_part in ['z','loss']:# ['x','y','z','loss','acc','lr_x','lr_y']:
+    for plot_part in ['z']:# ['x','y','z','loss','acc','lr_x','lr_y']:
         G = {}
         G['GS-GDA-B,N=2'] = newdata_path +'/primal_line_search_N_2_AGDA'
         G['GS-GDA-B,N=5'] = newdata_path +'/primal_line_search_N_5_AGDA'
@@ -236,6 +237,7 @@ for kappa in [5,10,50]:
         # # 调整布局以避免裁剪图例
         # plt.tight_layout()
 
+        current_date = datetime.now().strftime("%Y%m%d")
         # plt.savefig(f'./figure/tilde_sigma{"".join(data_name_tmp)}_{plot_part}.pdf', bbox_inches='tight', facecolor='w', dpi=150)
-        plt.savefig(f'./figure/tilde_sigma{"".join(data_name_tmp)}_{plot_part}.png', bbox_inches='tight', facecolor='w', dpi=100)
+        plt.savefig(f'./figure/tilde_sigma_new_{"".join(data_name_tmp)}_{plot_part}_{current_date}.png', bbox_inches='tight', facecolor='w', dpi=100)
         plt.close()
