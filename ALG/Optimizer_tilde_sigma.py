@@ -542,6 +542,7 @@ class ALG():
                         
                         #break the if beyond max iter 
                         if self.record['iter'][s]>=max_iter:
+                            print(f'Break by max iter at {self.record["iter"][s]}')
                             break
 
                         #update the model by method
@@ -729,7 +730,7 @@ class ALG():
                 foo = self.data_name
                 save_kappa = 1
             current_time = datetime.now().strftime("%Y%m%d")
-            folder_path = './result_data/tilde_sigma_new_' + foo + '_muy_' + str(self.mu_y) + '_kappa_' + str(save_kappa) + '_b_' + str(self.b) + '_' + current_time
+            folder_path = './result_data/tilde_sigma_K10000_' + foo + '_muy_' + str(self.mu_y) + '_kappa_' + str(save_kappa) + '_b_' + str(self.b) + '_sim_' + str(self.sim_time) + '_' + current_time
             if not os.path.exists(folder_path):
                 os.makedirs(folder_path)
             file_name =  folder_path + '/' + method 
@@ -1153,7 +1154,7 @@ class ALG():
                 #     self.show_result(s,batch_index, sim_done=False)
 
                 # update the complexity and iterations
-                if method == 'VRLM' and iter == 0:
+                if method == 'VRLM' and self.record['iter'][s] == 0:
                     self.record['total_sample_complexity'][s] += b0_vrlm
                     self.record['total_oracle_complexity'][s] += b0_vrlm/N
                     self.record['total_iter'][s] += 1

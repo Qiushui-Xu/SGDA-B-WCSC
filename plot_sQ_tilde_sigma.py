@@ -23,7 +23,7 @@ for kappa in [5,10,50]:
     b=10
     data_name = f'Q_stdx_{stdx}_stdy_{stdy}' + '_muy_' + str(mu_y) + '_kappa_' + str(kappa) + f'_b_{b}'
     data_path = f'./result_data/{data_name}'
-    newdata_path = f'./result_data/tilde_sigma_new_{data_name}'
+    newdata_path = f'./result_data/tilde_sigma_K10000_{data_name}_sim_10_20250324'
 
     for plot_part in ['z']:# ['x','y','z','loss','acc','lr_x','lr_y']:
         G = {}
@@ -239,5 +239,5 @@ for kappa in [5,10,50]:
 
         current_date = datetime.now().strftime("%Y%m%d")
         # plt.savefig(f'./figure/tilde_sigma{"".join(data_name_tmp)}_{plot_part}.pdf', bbox_inches='tight', facecolor='w', dpi=150)
-        plt.savefig(f'./figure/tilde_sigma_new_{"".join(data_name_tmp)}_{plot_part}_{current_date}.png', bbox_inches='tight', facecolor='w', dpi=100)
+        plt.savefig(f'./figure/tilde_sigma_10k_{"".join(data_name_tmp)}_{plot_part}_{current_date}.pdf', bbox_inches='tight', facecolor='w', dpi=100)
         plt.close()

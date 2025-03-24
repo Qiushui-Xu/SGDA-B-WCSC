@@ -41,8 +41,8 @@ b = 10
 for stdx,stdy in[(1,1)]:
     for kappa,mu_y in [(5,1),(10,1),(50,1)]:
         model_type = 'Q'  # Q: projection_y=False,DRO,FairCNN: projection_y=True
-        sim_time = 3
-        max_iter = 40000
+        sim_time = 10
+        max_iter = 10000
         freq = 10000  # print result by freq
         my_optimizer = ALG(train_set=train_set, data_name=data_name, mu_y=mu_y, kappa=kappa,
                            sim_time=sim_time, max_iter=max_iter,
@@ -71,13 +71,13 @@ for stdx,stdy in[(1,1)]:
         result = my_optimizer.line_search(N=5,T=3,gamma=gamma1,xi=0.99,alpha=0.99,randompick=True)
         result = my_optimizer.line_search(N=2,T=3,gamma=gamma1,xi=0.99,alpha=0.99,randompick=True)
         result = my_optimizer.line_search(N=1,T=3,gamma=gamma1,xi=0.99,alpha=0.99,randompick=True)
-        # my_optimizer.max_iter = max(result['total_iter'][0], my_optimizer.max_iter)
-        # sgd_b = b
-        # beta = 0.01
-        # lr_x_vrlm = min(kappa/40/L/(24*kappa**2+8*kappa+5), np.sqrt(beta)/48/(L+1)/(24*kappa**2+7*kappa+4))*1000
-        # lr_y_vrlm = np.sqrt(beta)/4/np.sqrt(2)/L
-        # result = my_optimizer.optimizer(lr_x=lr_x_vrlm,lr_y=lr_y_vrlm, beta_vrlm=beta, method='VRLM',b=sgd_b)
-        # result = my_optimizer.optimizer(lr_x=1/3/L, lr_y=1/144/L,p=2*L,beta=mu_y/144/L/1600, method='Smooth-AGDA', b=sgd_b)
-        # result = my_optimizer.optimizer(lr_x=1/16/(kappa+1)**2/L,lr_y=1/L,method='GDA',b=sgd_b)
-        # result = my_optimizer.optimizer(lr_x=1/3/L/(1+kappa)**2,lr_y=1/L,method='AGDA',b=sgd_b)
-        # result = my_optimizer.optimizer(lr_x=1, lr_y=1, method='TiAda', b=sgd_b) #0.01, 0.1, 1, 10, 100
+        my_optimizer.max_iter = max(result['total_iter'][0], my_optimizer.max_iter)
+        sgd_b = b
+        beta = 0.01
+        lr_x_vrlm = min(kappa/40/L/(24*kappa**2+8*kappa+5), np.sqrt(beta)/48/(L+1)/(24*kappa**2+7*kappa+4))*1000
+        lr_y_vrlm = np.sqrt(beta)/4/np.sqrt(2)/L
+        result = my_optimizer.optimizer(lr_x=lr_x_vrlm,lr_y=lr_y_vrlm, beta_vrlm=beta, method='VRLM',b=1)
+        result = my_optimizer.optimizer(lr_x=1/3/L, lr_y=1/144/L,p=2*L,beta=mu_y/144/L/1600, method='Smooth-AGDA', b=sgd_b)
+        result = my_optimizer.optimizer(lr_x=1/16/(kappa+1)**2/L,lr_y=1/L,method='GDA',b=sgd_b)
+        result = my_optimizer.optimizer(lr_x=1/3/L/(1+kappa)**2,lr_y=1/L,method='AGDA',b=sgd_b)
+        result = my_optimizer.optimizer(lr_x=1, lr_y=1, method='TiAda', b=sgd_b) #0.01, 0.1, 1, 10, 100

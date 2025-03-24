@@ -10,6 +10,7 @@ PLOT_LIMIT = 3000
 for mu_y in [0.01]:
     data_name = 'gisette' + '_muy_' + str(mu_y) + f'_kappa_{1}_b_{200}'
     data_path = f'./result_data/{data_name}'
+    data_path_new = f'./result_data/tilde_sigma_new_{data_name}'
     for plot_part in ['x','y','z','loss','acc','lr_x','lr_y','primalF']:
         G = {}
         G['GS-GDA-B,N=2'] = data_path +'/primal_line_search_N_2_AGDA'
@@ -19,10 +20,10 @@ for mu_y in [0.01]:
         #G['LS-GS-GDA-S'] = data_path + '/LS-GS-GDA-S'
         #G['LS-GS-GDA-R'] = data_path +'/LS-GS-GDA-R'
         # G['LS-GS-GDA-S-R'] = data_path + '/LS-GS-GDA-S-R'
-        G['J-GDA'] = data_path +'/GDA'
-        G['GS-GDA'] = data_path +'/AGDA'
-        G['TiAda'] = data_path +'/TiAda'
-        G['VRLM'] = data_path +'/VRLM'
+        G['J-GDA'] = data_path_new +'/GDA'
+        G['GS-GDA'] = data_path_new +'/AGDA'
+        G['TiAda'] = data_path_new +'/TiAda'
+        G['VRLM'] = data_path_new +'/VRLM'
 
 
         plt.figure(dpi=150)
@@ -213,4 +214,4 @@ for mu_y in [0.01]:
             if data_name_tmp[i] == '.':
                 data_name_tmp[i] = '_'
 
-        plt.savefig(f'./figure/{"".join(data_name_tmp)}_{plot_part}.pdf', bbox_inches='tight', facecolor='w', dpi=150)
+        plt.savefig(f'./figure/old_DRO{"".join(data_name_tmp)}_{plot_part}.pdf', bbox_inches='tight', facecolor='w', dpi=150)

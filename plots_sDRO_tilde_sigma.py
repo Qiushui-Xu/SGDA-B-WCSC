@@ -10,14 +10,15 @@ DATA_LIMIT = 5000
 PLOT_LIMIT = 3000
 for mu_y in [0.01]:
     data_name = 'gisette' + '_muy_' + str(mu_y) + f'_kappa_{1}_b_{200}'
+    vrlm_path = f'./backup_result/0317/{data_name}'
     data_path = f'./result_data/tilde_sigma_new_{data_name}'
-    data_path_new = f'./result_data/tilde_sigma_new_{data_name}'
+    data_path_new = f'./result_data/tilde_sigma_K10000_{data_name}_20250324'
 
-    for plot_part in ['x','y','z','loss','acc','lr_x','lr_y','primalF']:
+    for plot_part in ['x','y','z','loss','acc','lr_x','lr_y','primalF']:  # ['x','y','z','loss','acc','lr_x','lr_y','primalF']:
         G = {}
-        G['GS-GDA-B,N=2'] = data_path +'/primal_line_search_N_2_AGDA'
-        G['GS-GDA-B,N=5'] = data_path +'/primal_line_search_N_5_AGDA'
-        G['GS-GDA-B,N=1'] = data_path +'/primal_line_search_N_1_AGDA'
+        G['GS-GDA-B,N=2'] = data_path_new +'/primal_line_search_N_2_AGDA'
+        G['GS-GDA-B,N=5'] = data_path_new +'/primal_line_search_N_5_AGDA'
+        G['GS-GDA-B,N=1'] = data_path_new +'/primal_line_search_N_1_AGDA'
         #G['LS-GS-GDA'] = data_path +'/LS-GS-GDA'
         #G['LS-GS-GDA-S'] = data_path + '/LS-GS-GDA-S'
         #G['LS-GS-GDA-R'] = data_path +'/LS-GS-GDA-R'
@@ -25,7 +26,7 @@ for mu_y in [0.01]:
         G['J-GDA'] = data_path +'/GDA'
         G['GS-GDA'] = data_path +'/AGDA'
         G['TiAda'] = data_path +'/TiAda'
-        # G['VRLM'] = data_path +'/VRLM'
+        G['VRLM'] = vrlm_path +'seed_44_wrong_b0/VRLM'
 
 
         # plt.figure(dpi=50)
@@ -73,8 +74,8 @@ for mu_y in [0.01]:
                 acc = [acc[i][:data_xLimit] for i in valid_line_search]
                 loss = [record['loss'][i][:data_xLimit] for i in valid_line_search]
                 primal = [record['primalF'][i][:data_xLimit] for i in valid_line_search]
-                # error = [[1 - ele[i] for i in range(len(acc[0]))] for ele in acc]
-                error = [[1 - ele[i] for i in range(len(ele))] for ele in acc]
+                error = [[1 - ele[i] for i in range(len(acc[0]))] for ele in acc]
+                # error = [[1 - ele[i] for i in range(len(ele))] for ele in acc]
                 lr_x = record['lr_x']
                 lr_y = record['lr_y']
                 lr_x = [lr_x[i][:data_xLimit] for i in valid_line_search]
@@ -189,7 +190,7 @@ for mu_y in [0.01]:
             plt.yscale('log')
             #plt.ylim(0.3, 1.5)
         elif plot_part == 'acc':
-            #plt.ylim(0.04, 0.1)
+            plt.ylim(0.0, 0.5)
             #plt.xlim(1,160)
             #plt.yscale('log')
             from matplotlib.ticker import ScalarFormatter
@@ -219,5 +220,5 @@ for mu_y in [0.01]:
 
         # plt.savefig(f'./figure/{"".join(data_name_tmp)}_{plot_part}.pdf', bbox_inches='tight', dpi=50)
         current_date = datetime.now().strftime("%Y%m%d")
-        plt.savefig(f'./figure/{"".join(data_name_tmp)}_{plot_part}_{current_date}.png', bbox_inches='tight', facecolor='w', dpi=200)
+        plt.savefig(f'./figure/{"".join(data_name_tmp)}_{plot_part}_{current_date}_10k.pdf', bbox_inches='tight', dpi=200)  # , facecolor='w'
         plt.close()

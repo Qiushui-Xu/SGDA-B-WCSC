@@ -134,7 +134,7 @@ class ALG():
 
 
     def load_initial_model(self, sim_time):
-        start = torch.load(f'{self.model_type}_initial.pt')
+        start = torch.load(f'{self.model_type}_initial.pt', map_location=self.device)
         self.start_model,self.y_opt,self.model_copy,self.model_bk = start[sim_time]
 
     def reset_all(self,T=1):
@@ -968,7 +968,7 @@ class ALG():
                     self.show_result(s,batch_index, sim_done=False)
 
                 # update the complexity and iterations
-                if method == 'VRLM' and iter == 0:
+                if method == 'VRLM' and self.record['iter'][s] == 0:
                     self.record['total_sample_complexity'][s] += b0_vrlm
                     self.record['total_oracle_complexity'][s] += b0_vrlm/N
                     self.record['total_iter'][s] += 1
@@ -1001,7 +1001,7 @@ class ALG():
                     foo = self.data_name
                     save_kappa = 1
                 import os
-                folder_path = './result_data/' + foo + '_muy_' + str(self.mu_y) + '_kappa_' + str(save_kappa) + '_b_' + str(self.b)
+                folder_path = './result_data/' + foo + '_muy_' + str(self.mu_y) + '_kappa_' + str(save_kappa) + '_b_' + str(self.b) + 'seed_44'
                 if not os.path.exists(folder_path):
                     os.makedirs(folder_path)
                 file_name =  folder_path + '/' + method 
